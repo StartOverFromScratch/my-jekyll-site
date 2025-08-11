@@ -1,0 +1,59 @@
+name: Deploy Jekyll site to Pages
+
+on:
+  # 'main' ブランチへのプッシュ時に実行
+  push:
+    branches: [main]
+  # Actionsタブから手動で実行することも許可
+  workflow_dispatch:
+
+# GITHUB_TOKENに付与される権限を設定
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 一度に実行されるデプロイは1つに制限
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # ビルドジョブ
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # ステップ1: リポジトリのコードをチェックアウト
+      - name: Checkout
+        uses: actions/checkout@v4 # [49]
+
+      # ステップ2: Ruby環境をセットアップ
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4' # 使用するRubyのバージョンを指定
+          bundler-cache: true # 'bundle install'を自動実行し、Gemをキャッシュする [47]
+
+      # ステップ3: Jekyllでサイトをビルド
+      - name: Build with Jekyll
+        run: bundle exec jekyll build
+        env:
+          JEKYLL_ENV: production
+
+      # ステップ4: ビルドされたサイトをアーティファクトとしてアップロード
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3 # [50]
+
+  # デプロイジョブ
+  deploy:
+    # 'build'ジョブの成功を待つ
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # ステップ5: アーティファクトをGitHub Pagesにデプロイ
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # [50]
