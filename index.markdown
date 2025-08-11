@@ -4,3 +4,6 @@
 
 layout: default
 ---
+
+# welcome to SOFS.
+This site is corporate site about StartOverFromScratch.
